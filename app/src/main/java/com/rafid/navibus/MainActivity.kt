@@ -1,15 +1,21 @@
 package com.rafid.navibus
 
 import android.Manifest
+import android.app.Dialog
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
+import android.view.Window
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.ImageButton
@@ -22,7 +28,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
 import androidx.core.view.WindowCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -37,21 +45,24 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.gms.common.api.Status
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.navigation.NavigationView
 import com.rafid.navibus.data.model.Halte
 import com.rafid.navibus.data.repository.HalteRepository
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var mMap: GoogleMap
     private lateinit var bottomSheetHalte: BottomSheetBehavior<ConstraintLayout>
     private lateinit var bottomSheetDetail: BottomSheetBehavior<MaterialCardView>
-    private lateinit var fab: ImageButton
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var databaseHelper: DatabaseHelper
     
     // Data
     private val allHalteList = mutableListOf<Halte>()
     private val activeMarkers = mutableMapOf<String, Marker>()
     private var currentRoutePolyline: Polyline? = null
     private var halteKeberangkatan: Halte? = null
+    private var halteTujuan: Halte? = null
     private var markerTujuan: Marker? = null
 
     // Location
@@ -79,6 +90,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
 
+        databaseHelper = DatabaseHelper.getInstance(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         createLocationCallback()
 
@@ -89,7 +101,23 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        fab = findViewById(R.id.fab)
+        // Setup Drawer
+        drawerLayout = findViewById(R.id.drawer_layout)
+        val navigationView = findViewById<NavigationView>(R.id.nav_view)
+        navigationView.setNavigationItemSelectedListener(this)
+        
+        // --- UPDATE: Set User Info in Drawer Header ---
+        val headerView = navigationView.getHeaderView(0)
+        val tvUserNameHeader = headerView.findViewById<TextView>(R.id.tvUserName)
+        val tvUserEmailHeader = headerView.findViewById<TextView>(R.id.tvUserEmailHeader)
+        
+        val sharedPreferences = getSharedPreferences(LoginActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        val userEmail = sharedPreferences.getString(LoginActivity.KEY_EMAIL, "user@navibus.com")
+        
+        tvUserEmailHeader.text = userEmail
+        // Set username from the part of email before "@"
+        tvUserNameHeader.text = userEmail?.split("@")?.get(0) ?: "Pengguna"
+        // --- END UPDATE ---
 
         // Setup Bottom Sheets
         val sheetHalte = findViewById<ConstraintLayout>(R.id.bottomSheetHalte)
@@ -102,18 +130,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         
         bottomSheetDetail.addBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                when (newState) {
-                    BottomSheetBehavior.STATE_HIDDEN -> {
-                        currentRoutePolyline?.remove()
-                        currentRoutePolyline = null
-                        markerTujuan?.remove()
-                        markerTujuan = null
-                        fab.visibility = View.VISIBLE
-                    }
-                    BottomSheetBehavior.STATE_EXPANDED -> {
-                        fab.visibility = View.GONE
-                    }
-                    else -> fab.visibility = View.VISIBLE
+                if (newState == BottomSheetBehavior.STATE_HIDDEN) {
+                    currentRoutePolyline?.remove()
+                    currentRoutePolyline = null
+                    markerTujuan?.remove()
+                    markerTujuan = null
                 }
             }
             override fun onSlide(bottomSheet: View, slideOffset: Float) { /* Do nothing */ }
@@ -128,15 +149,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun setupUIControls() {
         val btnZoomIn = findViewById<ImageButton>(R.id.btnZoomIn)
         val btnZoomOut = findViewById<ImageButton>(R.id.btnZoomOut)
+        val btnBurgerMenu = findViewById<ImageButton>(R.id.btnBurgerMenu)
 
         btnZoomIn?.setOnClickListener { if (::mMap.isInitialized) mMap.animateCamera(CameraUpdateFactory.zoomIn()) }
         btnZoomOut?.setOnClickListener { if (::mMap.isInitialized) mMap.animateCamera(CameraUpdateFactory.zoomOut()) }
-        fab.setOnClickListener {
-            if (::mMap.isInitialized) {
-                lastKnownLocation?.let {
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(it, 15f))
-                } ?: getDeviceLocation()
-            }
+        
+        btnBurgerMenu.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.START)
         }
     }
 
@@ -151,6 +170,30 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
         drawRoute3A() // Example route
         checkLocationPermission()
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.nav_profile -> {
+                val intent = Intent(this, ProfileActivity::class.java)
+                startActivity(intent)
+            }
+            R.id.nav_history -> {
+                val intent = Intent(this, HistoryActivity::class.java)
+                startActivity(intent)
+            }
+            R.id.nav_logout -> {
+                val sharedPreferences = getSharedPreferences(LoginActivity.PREFS_NAME, Context.MODE_PRIVATE)
+                sharedPreferences.edit().clear().apply()
+
+                val intent = Intent(this, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+        }
+        drawerLayout.closeDrawer(GravityCompat.START)
+        return true
     }
 
     private fun showHalteDetail(halte: Halte, distance: Float) {
@@ -176,24 +219,60 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         actvTujuan.setAdapter(adapter)
         actvTujuan.text.clear()
 
-        btnBayar.visibility = View.GONE // Sembunyikan tombol bayar awalnya
+        btnBayar.visibility = View.GONE
 
         actvTujuan.setOnItemClickListener { parent, _, position, _ ->
             val selectedName = parent.getItemAtPosition(position) as String
-            val halteTujuan = allHalteList.find { it.name == selectedName }
+            halteTujuan = allHalteList.find { it.name == selectedName }
             
             halteTujuan?.let {
                 drawRouteOnMap(halte, it)
-                btnBayar.visibility = View.VISIBLE // Tampilkan tombol bayar
+                btnBayar.visibility = View.VISIBLE
             }
         }
         
         btnBack.setOnClickListener {
             bottomSheetDetail.state = BottomSheetBehavior.STATE_HIDDEN
         }
+        
+        btnBayar.setOnClickListener { 
+            showPaymentDialog()
+        }
 
         bottomSheetHalte.state = BottomSheetBehavior.STATE_HIDDEN
         bottomSheetDetail.state = BottomSheetBehavior.STATE_EXPANDED
+    }
+
+    private fun showPaymentDialog() {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_payment)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        
+        val btnSelesai = dialog.findViewById<MaterialButton>(R.id.btnSelesai)
+        val tvBusCode = dialog.findViewById<TextView>(R.id.tvBusCode)
+        val busCode = "TJ${(100..999).random()}"
+        tvBusCode.text = "Kode Bus: $busCode"
+
+        btnSelesai.setOnClickListener {
+            val sharedPreferences = getSharedPreferences(LoginActivity.PREFS_NAME, Context.MODE_PRIVATE)
+            val userEmail = sharedPreferences.getString(LoginActivity.KEY_EMAIL, "") ?: ""
+
+            databaseHelper.addTripHistory(
+                userEmail = userEmail,
+                start = halteKeberangkatan?.name ?: "N/A",
+                destination = halteTujuan?.name ?: "N/A",
+                busCode = busCode
+            )
+            dialog.dismiss()
+            
+            val intent = Intent(this, HistoryActivity::class.java)
+            startActivity(intent)
+            
+            bottomSheetDetail.state = BottomSheetBehavior.STATE_HIDDEN
+        }
+        
+        dialog.show()
     }
 
     private fun drawRouteOnMap(start: Halte, end: Halte) {

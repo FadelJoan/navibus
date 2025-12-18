@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Bottom Sheet Halte List -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/bottomSheetHalte"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bottom_sheet"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="42dp"
+        android:paddingBottom="24dp"
+        app:behavior_hideable="true"
+        app:behavior_peekHeight="260dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <TextView
+            android:id="@+id/tvSheetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Halte Terdekat"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvSheetSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Dalam radius 5 km"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvSheetTitle" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:scrollbars="none"
+            app:layout_constraintTop_toBottomOf="@id/tvSheetSubtitle">
+
+            <LinearLayout
+                android:id="@+id/containerHalteCards"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Bottom Sheet Halte Detail -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/bottomSheetDetailHalte"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:behavior_draggable="false"
+        app:behavior_hideable="true"
+        app:cardBackgroundColor="#0B1623"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <include layout="@layout/bottom_sheet_halte_detail" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Floating Action Button -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_navigation"
+        app:backgroundTint="@color/accent_blue"
+        app:tint="@color/white"
+        app:layout_anchor="@id/bottomSheetHalte"
+        app:layout_anchorGravity="top|center_horizontal" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

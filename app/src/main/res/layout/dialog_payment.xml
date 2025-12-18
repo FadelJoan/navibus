@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center"
+    android:background="@color/card_background">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pindai untuk Membayar"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"/>
+
+    <ImageView
+        android:id="@+id/ivQrCode"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/ic_qr_code_dummy" 
+        android:scaleType="centerCrop"/>
+
+    <TextView
+        android:id="@+id/tvBusCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Kode Bus: TJ001"
+        android:textColor="@color/text_secondary"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelesai"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="24dp"
+        android:text="Selesai" />
+
+</LinearLayout>
