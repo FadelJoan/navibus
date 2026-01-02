@@ -77,7 +77,8 @@
         android:src="@drawable/ic_navigation"
         app:backgroundTint="@color/accent_blue"
         app:tint="@color/white"
-        app:layout_anchor="@id/bottomSheetHalte"
-        app:layout_anchorGravity="top|center_horizontal" />
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="15dp"
+        android:layout_marginBottom="230dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

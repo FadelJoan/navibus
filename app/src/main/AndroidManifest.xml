@@ -2,9 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -14,19 +14,24 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Navibus">
+        android:theme="@style/Theme.Navibus"
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="31">
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCsSKh4uwwhXEv8dc8xxKEb1OGetNkrqrg" />
 
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Navibus">
+        </activity>
 
         <activity
             android:name=".LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.Navibus">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -35,19 +40,16 @@
 
         <activity
             android:name=".RegisterActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".MainActivity"
-            android:exported="false" />
-
+            android:exported="false"
+            android:theme="@style/Theme.Navibus"/>
         <activity
             android:name=".ProfileActivity"
-            android:exported="false" />
-        
+            android:exported="false"
+            android:theme="@style/Theme.Navibus"/>
         <activity
             android:name=".HistoryActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.Navibus"/>
 
     </application>
 

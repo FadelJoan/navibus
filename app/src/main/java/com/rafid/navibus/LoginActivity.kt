@@ -9,6 +9,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.auth.FirebaseAuth
+import com.rafid.navibus.Constants.KEY_EMAIL
+import com.rafid.navibus.Constants.PREFS_NAME
 
 class LoginActivity : AppCompatActivity() {
 
@@ -16,27 +19,21 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var etPassword: TextInputEditText
     private lateinit var btnLogin: Button
     private lateinit var tvRegister: TextView
-    private lateinit var databaseHelper: DatabaseHelper
+    private lateinit var auth: FirebaseAuth
     private lateinit var sharedPreferences: SharedPreferences
-
-    companion object {
-        const val PREFS_NAME = "NavibusPrefs"
-        const val KEY_EMAIL = "user_email"
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        auth = FirebaseAuth.getInstance()
 
-        if (isLoggedIn()) {
+        if (auth.currentUser != null) {
             goToMainActivity()
             return
         }
 
         setContentView(R.layout.activity_login)
-
-        databaseHelper = DatabaseHelper.getInstance(this)
 
         etEmail = findViewById(R.id.etEmail)
         etPassword = findViewById(R.id.etPassword)
@@ -52,22 +49,21 @@ class LoginActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            if (databaseHelper.checkUser(email, password)) {
-                saveLoginState(email)
-                goToMainActivity()
-            } else {
-                Toast.makeText(this, "Email atau password salah", Toast.LENGTH_SHORT).show()
-            }
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this) { task ->
+                    if (task.isSuccessful) {
+                        saveLoginState(email)
+                        goToMainActivity()
+                    } else {
+                        Toast.makeText(this, "Login gagal: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
         }
 
         tvRegister.setOnClickListener {
             val intent = Intent(this, RegisterActivity::class.java)
             startActivity(intent)
         }
-    }
-
-    private fun isLoggedIn(): Boolean {
-        return sharedPreferences.getString(KEY_EMAIL, null) != null
     }
 
     private fun saveLoginState(email: String) {
@@ -78,6 +74,7 @@ class LoginActivity : AppCompatActivity() {
 
     private fun goToMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
     }

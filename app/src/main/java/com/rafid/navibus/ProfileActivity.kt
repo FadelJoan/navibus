@@ -7,23 +7,28 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.rafid.navibus.Constants.KEY_EMAIL
+import com.rafid.navibus.Constants.PREFS_NAME
 
 class ProfileActivity : AppCompatActivity() {
 
     private lateinit var sharedPreferences: SharedPreferences
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_profile)
 
-        sharedPreferences = getSharedPreferences(LoginActivity.PREFS_NAME, Context.MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        auth = FirebaseAuth.getInstance()
 
         val btnHistory = findViewById<Button>(R.id.btnHistory)
         val btnLogout = findViewById<Button>(R.id.btnLogout)
         val tvUserName = findViewById<TextView>(R.id.tvUserName)
 
-        // Display logged-in user's email
-        tvUserName.text = sharedPreferences.getString(LoginActivity.KEY_EMAIL, "user@navibus.com")
+        val userEmail = sharedPreferences.getString(KEY_EMAIL, "user@navibus.com")
+        tvUserName.text = userEmail?.split("@")?.get(0) ?: "Pengguna"
 
         btnHistory.setOnClickListener {
             val intent = Intent(this, HistoryActivity::class.java)
@@ -31,7 +36,10 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         btnLogout.setOnClickListener {
-            // Clear login state
+            // Sign out from Firebase
+            auth.signOut()
+
+            // Clear login state from SharedPreferences
             val editor = sharedPreferences.edit()
             editor.clear()
             editor.apply()
